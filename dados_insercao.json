@@ -1,0 +1,23 @@
+[
+    {
+        "Programa": {
+            "Sigla": "Ex.: PPGPC",
+            "Nome Completo": "Ex.: Programa de Pós-Graduação em Psicologia Clínica",
+            "Instituição": "Ex.: Pontifícia Universidade Católica do Rio de Janeiro",
+            "Modalidade": "Apenas Mestrado",
+            "Número médio de docentes (DP)": 2
+        },
+        "Cursos de Especialização": {
+            "Ofertou": true,
+            "Cursos": "xx",
+            "Descrição": "xx",
+            "Alunos": "xxxx",
+            "Duração": "xx",
+            "Docentes Envolvidos": 0,
+            "Impacto": "xxx"
+        },
+        "Reflexões": "xx",
+        "Impacto Total": "xx",
+        "Recomendações": "xx"
+    }
+]
