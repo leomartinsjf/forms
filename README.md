@@ -36,11 +36,11 @@ pip install -r requirements.txt
 Para executar o aplicativo:
 
 ```bash
-streamlit run app2.py
+streamlit run app.py
 ```
 
 ## Estrutura do Projeto
 
-- `app2.py`: Aplicativo principal Streamlit
+- `app.py`: Aplicativo principal Streamlit
 - `requirements.txt`: Lista de dependências do projeto
 - `README.md`: Este arquivo de documentação 
