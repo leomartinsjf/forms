@@ -1,4 +1,143 @@
 import streamlit as st
+import json
+import os
+import base64
+import requests
+from datetime import datetime
+import time
+
+# GitHub API configuration
+GITHUB_REPO = "leomartinsjf/FORMS"  # Replace with your actual GitHub username/repo
+GITHUB_TOKEN = st.secrets["github_token"] if "github_token" in st.secrets else None
+GITHUB_FILE_PATH = "dados_insercao.json"
+
+# Function to check if running on Streamlit Cloud
+def is_streamlit_cloud():
+    return "STREAMLIT_SHARING_MODE" in os.environ or "STREAMLIT_RUN_PATH" in os.environ
+
+# Function to load data from GitHub
+def load_data_from_github():
+    if not GITHUB_TOKEN:
+        st.warning("GitHub token not found in secrets. Using local file storage.")
+        return None
+        
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    try:
+        # Get the file content from GitHub
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            # Decode the content
+            content = response.json()
+            file_content = base64.b64decode(content["content"]).decode("utf-8")
+            # Get the current SHA (needed for updating the file later)
+            sha = content["sha"]
+            
+            # Parse the JSON content
+            data = json.loads(file_content)
+            return data, sha
+        else:
+            if response.status_code == 404:
+                # File doesn't exist yet
+                return [], None
+            else:
+                st.error(f"Failed to load data from GitHub: {response.status_code}")
+                st.json(response.json())
+                return None
+                
+    except Exception as e:
+        st.error(f"Error loading data from GitHub: {str(e)}")
+        return None
+        
+# Function to save data to GitHub
+def save_data_to_github(data, sha=None):
+    if not GITHUB_TOKEN:
+        st.warning("GitHub token not found in secrets. Using local file storage.")
+        return False
+        
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    # Convert data to JSON and encode for GitHub
+    json_data = json.dumps(data, indent=4)
+    encoded_content = base64.b64encode(json_data.encode("utf-8")).decode("utf-8")
+    
+    # Prepare the request payload
+    payload = {
+        "message": f"Update data - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "content": encoded_content
+    }
+    
+    # If updating an existing file, include the SHA
+    if sha:
+        payload["sha"] = sha
+        
+    try:
+        # Update the file on GitHub
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+        response = requests.put(url, headers=headers, json=payload)
+        
+        if response.status_code in [200, 201]:
+            return True
+        else:
+            st.error(f"Failed to save data to GitHub: {response.status_code}")
+            st.json(response.json())
+            return False
+            
+    except Exception as e:
+        st.error(f"Error saving data to GitHub: {str(e)}")
+        return False
+
+# Function to load existing data
+def load_data():
+    # First, check if we're on Streamlit Cloud and should use GitHub
+    if is_streamlit_cloud() and GITHUB_TOKEN:
+        github_data = load_data_from_github()
+        if github_data:
+            data, _ = github_data
+            return data
+    
+    # Fall back to local file if not on Streamlit Cloud or GitHub failed
+    try:
+        with open("dados_insercao.json", "r") as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+# Function to save data
+def save_data(data_list):
+    # If on Streamlit Cloud, try to save to GitHub
+    if is_streamlit_cloud() and GITHUB_TOKEN:
+        # Get the current SHA
+        _, sha = load_data_from_github() or (None, None)
+        # Save to GitHub
+        if save_data_to_github(data_list, sha):
+            return
+    
+    # Fall back to local file
+    with open("dados_insercao.json", "w") as file:
+        json.dump(data_list, indent=4)
+
+# Initialize session state for tracking form submission
+if 'form_submitted' not in st.session_state:
+    st.session_state.form_submitted = False
+
+# Load existing data
+existing_data = load_data()
+
+# Display GitHub status if applicable
+if is_streamlit_cloud():
+    if GITHUB_TOKEN:
+        st.sidebar.success("GitHub storage is configured")
+    else:
+        st.sidebar.warning("GitHub token not found in secrets. Data will not persist.")
 
 st.title("Formulário de Inserção Social - Quadriênio 2021-2024")
 
@@ -165,8 +304,31 @@ if st.button("Enviar"):
             "Reflexões": reflexoes,
             "Impacto Total": impacto_total,
             "Recomendações": recomendacoes
-        }
+        },
+        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     
-    st.success("Dados coletados com sucesso!")
+    # Add data to existing data
+    existing_data.append(dados)
+    
+    # Show a spinner while saving data
+    with st.spinner("Salvando dados..."):
+        # Save to JSON file (local or GitHub)
+        save_data(existing_data)
+        
+        # Add a small delay for better UX
+        time.sleep(1)
+    
+    st.session_state.form_submitted = True
+    st.success("Dados coletados e salvos com sucesso!")
     st.write(dados)
+
+# Add a section to view submitted data
+st.header("Submissões Anteriores")
+if existing_data:
+    if st.checkbox("Mostrar dados anteriores"):
+        for i, submission in enumerate(existing_data):
+            with st.expander(f"Submissão {i+1} - {submission.get('Timestamp', 'Data não disponível')}"):
+                st.json(submission)
+else:
+    st.info("Nenhuma submissão encontrada.")
