@@ -29,6 +29,15 @@ Para garantir que os dados submetidos através do formulário sejam salvos corre
    ```
    Substitua "seu-token-aqui" pelo token PAT que você gerou no GitHub
 
+### ⚠️ Avisos de Segurança - IMPORTANTE
+
+- **NUNCA** adicione seu token diretamente no código ou em qualquer arquivo que seja enviado para o GitHub
+- O token só deve ser configurado através dos **Secrets** do Streamlit Cloud
+- Não imprima ou exiba o token em logs ou na interface do aplicativo
+- Considere usar um token com permissões mínimas necessárias (apenas acesso ao repositório específico)
+- Revogue o token imediatamente se suspeitar que ele foi comprometido
+- Configure o token para expirar após um período de tempo razoável (por exemplo, 90 dias)
+
 ### 3. Atualize o Repositório no Código
 
 No arquivo `app.py`, atualize a variável `GITHUB_REPO` com o nome do seu usuário e repositório:

@@ -15,6 +15,15 @@ GITHUB_FILE_PATH = "dados_insercao.json"
 def is_streamlit_cloud():
     return "STREAMLIT_SHARING_MODE" in os.environ or "STREAMLIT_RUN_PATH" in os.environ
 
+# Function to safely show API errors without exposing sensitive info
+def safe_error_message(response):
+    error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
+    # Create a sanitized version that doesn't include possible token info
+    safe_data = {k: v for k, v in error_data.items() if k not in ['documentation_url']}
+    if 'message' in safe_data:
+        return f"Error: {safe_data['message']}"
+    return f"HTTP Error: {response.status_code}"
+
 # Function to load data from GitHub
 def load_data_from_github():
     if not GITHUB_TOKEN:
@@ -46,8 +55,7 @@ def load_data_from_github():
                 # File doesn't exist yet
                 return [], None
             else:
-                st.error(f"Failed to load data from GitHub: {response.status_code}")
-                st.json(response.json())
+                st.error(safe_error_message(response))
                 return None
                 
     except Exception as e:
@@ -87,8 +95,7 @@ def save_data_to_github(data, sha=None):
         if response.status_code in [200, 201]:
             return True
         else:
-            st.error(f"Failed to save data to GitHub: {response.status_code}")
-            st.json(response.json())
+            st.error(safe_error_message(response))
             return False
             
     except Exception as e:
