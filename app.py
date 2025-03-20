@@ -8,7 +8,13 @@ import time
 
 # GitHub API configuration
 GITHUB_REPO = "leomartinsjf/FORMS"  # Replace with your actual GitHub username/repo
-GITHUB_TOKEN = st.secrets["github_token"] if "github_token" in st.secrets else None
+
+# Safely access secrets - handle the case when secrets.toml doesn't exist
+try:
+    GITHUB_TOKEN = st.secrets["github_token"] if "github_token" in st.secrets else None
+except (FileNotFoundError, KeyError):
+    GITHUB_TOKEN = None
+    
 GITHUB_FILE_PATH = "dados_insercao.json"
 
 # Function to check if running on Streamlit Cloud
@@ -139,12 +145,14 @@ if 'form_submitted' not in st.session_state:
 # Load existing data
 existing_data = load_data()
 
-# Display GitHub status if applicable
+# Display mode information
 if is_streamlit_cloud():
     if GITHUB_TOKEN:
         st.sidebar.success("GitHub storage is configured")
     else:
-        st.sidebar.warning("GitHub token not found in secrets. Data will not persist.")
+        st.sidebar.warning("GitHub token not found in secrets. Data will not persist between app restarts.")
+else:
+    st.sidebar.info("Running in local mode. Data will be saved to local JSON file.")
 
 st.title("Formulário de Inserção Social - Quadriênio 2021-2024")
 

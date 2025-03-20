@@ -95,6 +95,21 @@ Para executar o aplicativo:
 streamlit run app.py
 ```
 
+## Desenvolvimento Local
+
+Para testar a aplicação localmente com persistência de dados:
+
+1. Crie um arquivo `.streamlit/secrets.toml` na raiz do projeto
+2. Adicione o seguinte conteúdo ao arquivo:
+   ```toml
+   github_token = "seu-token-de-teste"
+   ```
+3. **IMPORTANTE**: Não compartilhe este arquivo ou adicione-o ao controle de versão. O arquivo `.streamlit/secrets.toml` já está incluído no `.gitignore`.
+
+Quando a aplicação é executada localmente:
+- Os dados são salvos no arquivo `dados_insercao.json` no seu computador
+- O token do GitHub é usado apenas se você estiver testando a integração com o GitHub
+
 ## Estrutura do Projeto
 
 - `app.py`: Aplicativo principal Streamlit
